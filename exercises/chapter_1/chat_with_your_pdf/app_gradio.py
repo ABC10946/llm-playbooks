@@ -1,11 +1,12 @@
 import gradio as gr
 import os
-from langchain_community.document_loaders import PyPDFLoader, UnstructuredPDFLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader, PyPDFLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
-from langchain_community.chat_models import ChatOpenAI
+from langchain_classic.chains import ConversationalRetrievalChain
+from langchain_classic.memory import ConversationBufferMemory
+# from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 def process_pdf(file_path):
     """Process PDF with fallback strategies"""
@@ -27,13 +28,17 @@ def process_pdf(file_path):
 def setup_conversation_chain(vector_store, api_key):
     """Initialize conversation chain with memory"""
     try:
-        os.environ["OPENAI_API_KEY"] = api_key
         memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True
         )
+
+        llm = ChatOllama(
+            model="gpt-oss:20b"
+        )
+
         return ConversationalRetrievalChain.from_llm(
-            ChatOpenAI(temperature=0.1),
+            llm,
             vector_store.as_retriever(search_kwargs={"k": 3}),
             memory=memory
         )
@@ -42,8 +47,6 @@ def setup_conversation_chain(vector_store, api_key):
 
 def upload_file(file, api_key, chat_history):
     """Handle PDF upload and initialization"""
-    if not api_key.startswith("sk-"):
-        raise gr.Error("Invalid OpenAI API key format")
     
     if not file.name.endswith('.pdf'):
         raise gr.Error("Only PDF files are supported")
