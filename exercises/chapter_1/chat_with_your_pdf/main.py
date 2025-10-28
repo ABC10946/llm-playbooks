@@ -5,7 +5,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_classic.chains import ConversationalRetrievalChain
 from langchain_classic.memory import ConversationBufferMemory
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
+
 import gradio as gr
 
 
@@ -34,7 +36,7 @@ def main():
     # Main function to run the chatbot
     # Set OpenAI API key (replace with your actual key)
     # api_key = input("Enter your OpenAI API key (sk-...): ").strip()
-    os.environ["OPENAI_API_KEY"] = "PUT YOUR OPEN AI KEY HERE"
+    # os.environ["OPENAI_API_KEY"] = "PUT YOUR OPEN AI KEY HERE"
 
     # Upload PDF file using Google Colab's files.upload()
     print("\nUpload a PDF file:")
@@ -50,9 +52,13 @@ def main():
         return
 
     # Setup conversation chain with memory and retriever
+    llm = ChatOllama(
+        model="gpt-oss:20b"
+    )
+
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     qa = ConversationalRetrievalChain.from_llm(
-        ChatOpenAI(temperature=0.1),
+        llm,
         vector_store.as_retriever(search_kwargs={"k": 3}),
         memory=memory
     )
